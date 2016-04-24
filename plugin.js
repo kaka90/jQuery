@@ -2,38 +2,78 @@
 
 (function ($) {
 
-    $.fn.fieldsValidate = function (options) {
+    $.fn.fillCity = function () {
 
-	
+        return this.each(function () {
+
+            var postalCodeField = $("#postal-code");
+            var cityField = $("#city");
+            var postalCode = postalCodeField.val();
+
+            // kod pocztowy
+
+            var postalPattern = new RegExp("^[0-9]{2}\-[0-9]{3}$");
+            var isPostalValid = postalPattern.test(postalCode);
+
+            if (isPostalValid) {
+
+                $.get('kody.csv', function(data) {
+                    var lines = data.split("\n");
+                    for (var i = 0; i < lines.length; i++) {
+                        var s = lines[i].split("\t");
+                        if (s[0] === postalCode) {
+                            cityField.val(s[1]);
+                            break;
+                        }
+                    }
+                });
+
+                postalCodeField.css("border-color", "green");
+                cityField.css("border-color", "green");
+            } else {
+                postalCodeField.css("border-color", "");
+                cityField.css("border-color", "");
+            }
+        });
+    };
+
+
+    $.fn.fieldsValidate = function (options) {
         var strengthType = options.type;
+
+        // wyznacza string powstaly z unikalnych liter wejsciowego stringa
+        function uniqueChar(str) {
+            var uniq = "";
+            for (var x=0;x < str.length;x++) {
+                if(uniq.indexOf(str.charAt(x))==-1) {
+                    uniq += str[x];
+                }
+            }
+            return uniq;
+        }
 
         return this.each(function () {
 
             var emailField = $("#email");
             var passwordField = $("#password");
-            var postalCodeField = $("#postal-code");
-            var cityField = $("#city");
 
             var email = emailField.val();
             var password = passwordField.val();
-            var postalCode = postalCodeField.val();
-			var city = cityField.val();
 
-			var msg = "";
-			
             // walidacja email
             var emailPattern = new RegExp("^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$");
             var isEmailValid = emailPattern.test(email);
 
             if (isEmailValid) {
-                $("#email").css("border-color", "green");
+                emailField.css("border-color", "green");
             } else {
-                $("#email").css("border-color", "red");
-				msg += "Popraw email<br>";
+                emailField.css("border-color", "red");
             }
 
+            var msg = "";
+
             // sila hasla / entropia hasla
-            var letters = "aąśćżąśźćębcdefghijklmnopqrstuvwxyz";
+            var letters = "abcdefghijklmnopqrstuvwxyz";
             var digits = "0123456789";
             var punctuation1 = "!@#$%^&*()";
             var punctuation2 = '~`-_=+[]{}\\|;:\'",.<>?/';
@@ -51,7 +91,7 @@
             var j;
 
             for (var i = 0, len = password.length; i < len; i++) {
-                for (j = 0; j < letters.length; j++) {
+                for (j = 0; j < 26; j++) {
 
                     if (password[i] === letters[j]) {
                         lettersLowercaseCnt++;
@@ -108,69 +148,60 @@
                 alphabetSize += punctuation2.length;
             }
 
+            var uniquePassword = uniqueChar(password);
+            var passwordWeightedLen = 0.2 * password.length + 0.8 * uniquePassword.length;
+
             // wlasna ocena
-            var passwordStrength = groupsCnt * password.length;
+            var passwordStrength = groupsCnt * passwordWeightedLen;
+
+
 
             // ocena za pomoca entropii
             var passwordStrengthEntropy;
-            if (alphabetSize === 0) {
+            if (alphabetSize == 0) {
                 passwordStrengthEntropy = 0;
             } else {
-                passwordStrengthEntropy = Math.round(password.length * (Math.log(alphabetSize) / Math.log(2)));
+                passwordStrengthEntropy = Math.round(passwordWeightedLen * (Math.log(alphabetSize) / Math.log(2)));
             }
+
+            console.log(passwordStrengthEntropy);
 
             if (strengthType === "entropy") {
 
-                if (passwordStrengthEntropy < 50) {
-                    msg += "Siła hasła jest słaba<br>";
-                   passwordField.css("border-color", "red").slideUp(1000).slideDown(1000);
-                } else if (passwordStrengthEntropy < 110) {
-                    msg += "Hasło jest średnie<br>";
+                if (passwordStrengthEntropy < 45) {
+                    msg += "Password is weak<br>";
+                   passwordField.css("border-color", "red");
+                } else if (passwordStrengthEntropy < 90) {
+                    msg += "Password is average<br>";
                     passwordField.css("border-color", "orange");
                 } else {
-                    
+                    msg += "Password is strong<br>";
                     passwordField.css("border-color", "green");
                 }
             } else {
                 if (passwordStrength < 35) {
-                    msg += "Siła hasła jest słaba<br>";
-                    passwordField.css("border-color", "red").slideUp(1000).slideDown(1000);
+                    msg += "Password is weak<br>";
+                    passwordField.css("border-color", "red");
                 } else if (passwordStrength < 70) {
-                    msg += "Hasło jest średnie<br>";
+                    msg += "Password is average<br>";
                     passwordField.css("border-color", "orange");
                 } else {
-                    
+                    msg += "Password is strong<br>";
                     passwordField.css("border-color", "green");
                 }
             }
 
-            // kod pocztowy
 
+            // kod pocztowy (tylko sprawdzenie poprawnosci)
+            var postalCodeField = $("#postal-code");
+            var postalCode = postalCodeField.val();
             var postalPattern = new RegExp("^[0-9]{2}\-[0-9]{3}$");
             var isPostalValid = postalPattern.test(postalCode);
 
-            if (isPostalValid) {
-                postalCodeField.css("border-color", "green");
-                
-            } else {
+            if (!isPostalValid) {
                 postalCodeField.css("border-color", "red");
-				msg += "Popraw kod pocztowy<br>";
-                
             }
-
-			
-			var cityPattern = new RegExp("^[a-zA-Z _][a-zA-Z0-9]{1,32}$");
-            var isCityValid = cityPattern.test(city);
-
-			if (isCityValid) {
-                cityField.css("border-color", "green");
-			} else {
-                cityField.css("border-color", "red");
-				msg += "Popraw miasto<br>";
-            }
-
-			
             $("#msg").html(msg);
         });
-    };
+    }
 })(jQuery);
