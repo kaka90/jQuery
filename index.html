@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Zad 2</title>
+    <script type="text/javascript" src="jquery-2.2.3.min.js"></script>
+    <script type="text/javascript" src="plugin.js"></script>
+</head>
+<body style="margin: 100px 0 0 200px;">
+    <form>
+        <label for="email">e-mail:</label> <br>
+        <input id="email" type="text" value="" name="e-mail"> <br>
+        <label for="password">hasło:</label> <br>
+        <input id="password" type="text" value="" name="password"> <br>
+        <label for="postal-code">kod pocztowy:</label> <br>
+        <input id="postal-code" type="text" value="" name="postal-code"> <br>
+        <label for="city">miasto:</label> <br>
+        <input id="city" type="text" value="" name="city"> <br>
+    </form>
+    <br> <button onclick='$(document).fieldsValidate({type : "entropy"});' style="width:173px;">Wyślij</button>
+    <div id="msg"></div>
+</body>
+</html>
